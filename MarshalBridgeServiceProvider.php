@@ -12,7 +12,8 @@
 namespace Yam\MarshalBridge;
 
 use \Aura\Marshal\Manager;
-use \Aura\Marshal\Type\Builder as TypeBuilder;
+//use \Aura\Marshal\Type\Builder as TypeBuilder;
+use \Yam\MarshalBridge\Type\Builder as TypeBuilder;
 use \Aura\Marshal\Relation\Builder as RelationBuilder;
 use \Illuminate\Support\ServiceProvider;
 
@@ -29,11 +30,18 @@ class MarshalBridgeServiceProvider extends ServiceProvider
 {
     public function register()
     {
-        $this->app->bindShared(
-            'marshal.manager',
+        // bind class;
+        $this->app->singleton(
+            'Aura\Marshal\Manager',
             function () {
-                return new \Aura\Marshal\Manager(new TypeBuilder, new RelationBuilder);
+                return new \Aura\Marshal\Manager(
+                    new TypeBuilder,
+                    new RelationBuilder
+                );
             }
         );
+
+        // bind alias;
+        $this->app->alias('Aura\Marshal\Manager', 'marshal.manager');
     }
 }
