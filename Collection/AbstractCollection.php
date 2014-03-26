@@ -12,6 +12,8 @@
 namespace Yam\MarshalBridge\Collection;
 
 use \Yam\Utils\Traits\Getter;
+use \Illuminate\Support\Contracts\JsonableInterface;
+use \Illuminate\Support\Contracts\ArrayableInterface;
 use \Aura\Marshal\Collection\GenericCollection as MarshalCollection;
 
 /**
@@ -24,7 +26,7 @@ use \Aura\Marshal\Collection\GenericCollection as MarshalCollection;
  * @author Thomas Appel <mail@thomas-appel.com>
  * @license MIT
  */
-class AbstractCollection extends MarshalCollection implements CollectionInterface
+class AbstractCollection extends MarshalCollection implements CollectionInterface, JsonableInterface, ArrayableInterface
 {
     use Getter;
 
@@ -127,5 +129,42 @@ class AbstractCollection extends MarshalCollection implements CollectionInterfac
     public function getData()
     {
         return $this->data;
+    }
+
+    /**
+     * toArray
+     *
+     * @access public
+     * @return array
+     */
+    public function toArray()
+    {
+        $data = [];
+
+        foreach ($this->data as $key => $entity) {
+            if ($entity instanceof ArrayableInterface) {
+                $value = $entity->toArray();
+            } elseif (is_object($entity)) {
+                $value = (array)$entity;
+            } else {
+                $value = $entity;
+            }
+            $data[$key] = $value;
+        }
+
+        return $data;
+    }
+
+    /**
+     * toJson
+     *
+     * @param int $options
+     *
+     * @access public
+     * @return string
+     */
+    public function toJson($options = 0)
+    {
+        return json_encode($this->toArray(), $options);
     }
 }
