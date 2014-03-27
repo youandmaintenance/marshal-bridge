@@ -26,7 +26,7 @@ use \Aura\Marshal\Collection\GenericCollection as MarshalCollection;
  * @author Thomas Appel <mail@thomas-appel.com>
  * @license MIT
  */
-class AbstractCollection extends MarshalCollection implements CollectionInterface, JsonableInterface, ArrayableInterface
+abstract class AbstractCollection extends MarshalCollection implements CollectionInterface, JsonableInterface, ArrayableInterface
 {
     use Getter;
 
@@ -59,8 +59,21 @@ class AbstractCollection extends MarshalCollection implements CollectionInterfac
      */
     public function setIdentityKey($key)
     {
-        $this->identityKey = $key;
+        $this->identityKey = $this->identityKey ?: $key;
     }
+
+    /**
+     * getItentityKey
+     *
+     *
+     * @access protected
+     * @return string
+     */
+    public function getIdentityKey()
+    {
+        return $this->identityKey;
+    }
+
     /**
      * pluck
      *
@@ -84,8 +97,13 @@ class AbstractCollection extends MarshalCollection implements CollectionInterfac
      */
     public function find($id)
     {
+        if (null === ($key = $this->getIdentityKey())) {
+            throw new \BadMethodCallException('no iditentiy key is set');
+            return;
+        }
+
         foreach ($this->data as $data) {
-            if ($this->getDefault($data, $this->identityKey, false) === $id) {
+            if ($this->getItemAttributeValue($data, $key) === $id) {
                 return $data;
             }
         }
@@ -102,9 +120,11 @@ class AbstractCollection extends MarshalCollection implements CollectionInterfac
      */
     public function filter($attribute, $value)
     {
-        return array_filter($this->data, function ($data) use ($attribute, $value) {
-            return isset($data[$attribute]) && $data[$attribute] === $value;
+        $result = array_filter($this->data, function ($data) use ($attribute, $value) {
+            return $this->getItemAttributeValue($data, $attribute) === $value;
         });
+
+        return new static((array)$result, $this->getIdentityKey());
     }
 
     /**
@@ -166,5 +186,19 @@ class AbstractCollection extends MarshalCollection implements CollectionInterfac
     public function toJson($options = 0)
     {
         return json_encode($this->toArray(), $options);
+    }
+
+    /**
+     * getItemAttributeValue
+     *
+     * @param mixed $item
+     * @param mixed $attribute
+     *
+     * @access protected
+     * @return mixed
+     */
+    protected function getItemAttributeValue($item, $attribute)
+    {
+        return is_object($item) ? $item->{$attribute} : $item[$attribute];
     }
 }
